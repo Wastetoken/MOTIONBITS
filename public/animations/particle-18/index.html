@@ -1,0 +1,247 @@
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+
+    #renderCanvas {
+        width: 100%;
+        height: 100vh;
+        touch-action: none;
+        outline: none;
+    }
+</style>
+
+<canvas id="renderCanvas"></canvas>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babylonjs/6.32.1/babylon.js"></script>
+<script>
+    const canvas = document.getElementById("renderCanvas");
+    const engine = new BABYLON.Engine(canvas, true, {
+        preserveDrawingBuffer: true,
+        stencil: true,
+        disableWebGL2Support: false,
+        antialias: true
+    });
+
+    const createScene = () => {
+        const scene = new BABYLON.Scene(engine);
+        scene.clearColor = new BABYLON.Color3(0.01, 0.01, 0.02);
+
+        const camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2.5, 30, new BABYLON.Vector3(0, 0, 0), scene);
+        camera.attachControl(canvas, true);
+        camera.wheelPrecision = 50;
+        camera.lowerRadiusLimit = 5;
+        camera.upperRadiusLimit = 50;
+        camera.useAutoRotationBehavior = true;
+        camera.autoRotationBehavior.idleRotationSpeed = 0.05;
+        camera.autoRotationBehavior.idleRotationWaitTime = 2000;
+        camera.autoRotationBehavior.idleRotationSpinupTime = 4000;
+        camera.panningSensibility = 1000;
+        camera.pinchPrecision = 100;
+
+        const glowLayer = new BABYLON.GlowLayer("glow", scene, {
+            mainTextureSamples: 4,
+            blurKernelSize: 64
+        });
+        glowLayer.intensity = 0.8;
+
+        const pipeline = new BABYLON.DefaultRenderingPipeline("pipeline", true, scene, [camera]);
+
+        pipeline.bloomEnabled = true;
+        pipeline.bloomThreshold = 0.4;
+        pipeline.bloomWeight = 0.5;
+        pipeline.bloomKernel = 64;
+        pipeline.bloomScale = 0.6;
+
+        pipeline.chromaticAberrationEnabled = true;
+        pipeline.chromaticAberration.aberrationAmount = 15;
+        pipeline.chromaticAberration.radialIntensity = 0.5;
+        pipeline.chromaticAberration.direction.x = 0.3;
+        pipeline.chromaticAberration.direction.y = 0.3;
+
+        pipeline.grainEnabled = true;
+        pipeline.grain.intensity = 10;
+        pipeline.grain.animated = true;
+
+        pipeline.imageProcessingEnabled = true;
+        pipeline.imageProcessing.contrast = 1.2;
+        pipeline.imageProcessing.exposure = 1.1;
+        pipeline.imageProcessing.vignetteEnabled = true;
+        pipeline.imageProcessing.vignetteWeight = 2;
+        pipeline.imageProcessing.vignetteColor = new BABYLON.Color4(0, 0, 0, 0.5);
+
+        scene.environmentTexture = BABYLON.CubeTexture.CreateFromPrefilteredData(
+            "https://playground.babylonjs.com/textures/environment.dds", scene);
+        scene.environmentIntensity = 0.8;
+
+        const createParticleSystem = (name, emitRate, size, speed, color1, color2) => {
+            const system = new BABYLON.ParticleSystem(name, emitRate, scene);
+            system.particleTexture = new BABYLON.Texture("https://www.babylonjs-playground.com/textures/flare.png", scene);
+            system.minEmitBox = new BABYLON.Vector3(-1, -1, -1);
+            system.maxEmitBox = new BABYLON.Vector3(1, 1, 1);
+            system.color1 = color1;
+            system.color2 = color2;
+            system.colorDead = new BABYLON.Color4(0, 0, 0.2, 0);
+            system.minSize = size * 0.7;
+            system.maxSize = size;
+            system.minLifeTime = 1;
+            system.maxLifeTime = 3;
+            system.emitRate = emitRate;
+            system.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
+            system.gravity = new BABYLON.Vector3(0, -0.1, 0);
+            system.direction1 = new BABYLON.Vector3(-speed, -speed, -speed);
+            system.direction2 = new BABYLON.Vector3(speed, speed, speed);
+            system.minAngularSpeed = 0;
+            system.maxAngularSpeed = Math.PI;
+            system.targetStopDuration = 0;
+            system.minEmitPower = 0.5;
+            system.maxEmitPower = 2;
+            system.updateSpeed = 0.02;
+            return system;
+        };
+
+        const torusKnot = BABYLON.MeshBuilder.CreateTorusKnot("knot", {
+            radius: 3,
+            tube: 1,
+            radialSegments: 256,
+            tubularSegments: 128,
+            p: 3,
+            q: 4
+        }, scene);
+
+        const knotMaterial = new BABYLON.PBRMetallicRoughnessMaterial("knotMaterial", scene);
+        torusKnot.material = knotMaterial;
+
+        knotMaterial.baseColor = new BABYLON.Color3(0.4, 0.6, 1.0);
+        knotMaterial.metallic = 0.9;
+        knotMaterial.roughness = 0.3;
+        knotMaterial.emissiveColor = new BABYLON.Color3(0.1, 0.2, 0.4);
+
+        knotMaterial.environmentIntensity = 0.7;
+        knotMaterial.emissiveFresnelParameters = new BABYLON.FresnelParameters();
+        knotMaterial.emissiveFresnelParameters.bias = 0.4;
+        knotMaterial.emissiveFresnelParameters.power = 2;
+        knotMaterial.emissiveFresnelParameters.leftColor = BABYLON.Color3.White();
+        knotMaterial.emissiveFresnelParameters.rightColor = new BABYLON.Color3(0.2, 0.4, 1);
+
+        const particleSystems = [
+            createParticleSystem("particles1", 2500, 0.4, 2,
+                new BABYLON.Color4(1, 0.3, 0.9, 1),
+                new BABYLON.Color4(0.8, 0.1, 0.6, 1)),
+            createParticleSystem("particles2", 1800, 0.3, 3,
+                new BABYLON.Color4(0.2, 1, 0.8, 1),
+                new BABYLON.Color4(0, 0.8, 0.6, 1)),
+            createParticleSystem("particles3", 1500, 0.25, 4,
+                new BABYLON.Color4(1, 0.8, 0.1, 1),
+                new BABYLON.Color4(1, 0.5, 0, 1)),
+            createParticleSystem("particles4", 1200, 0.35, 2.5,
+                new BABYLON.Color4(0.9, 0.2, 1, 1),
+                new BABYLON.Color4(0.6, 0.1, 0.8, 1))
+        ];
+
+        particleSystems.forEach(system => {
+            system.emitter = torusKnot;
+            system.start();
+        });
+
+        const createOrbiter = (radius, speed, color) => {
+            const orbiter = BABYLON.MeshBuilder.CreateTorusKnot("orbiter", {
+                radius: 0.4,
+                tube: 0.15,
+                radialSegments: 96,
+                tubularSegments: 48,
+                p: 2,
+                q: 3
+            }, scene);
+
+            const orbiterMaterial = new BABYLON.PBRMaterial("orbiterMat", scene);
+            orbiterMaterial.albedoColor = color;
+            orbiterMaterial.emissiveColor = color.scale(0.6);
+            orbiterMaterial.metallic = 0.9;
+            orbiterMaterial.roughness = 0.2;
+            orbiter.material = orbiterMaterial;
+
+            const orbiterParticles = createParticleSystem(
+                "orbiterTrail", 300, 0.15, 1,
+                new BABYLON.Color4(color.r, color.g, color.b, 0.9),
+                new BABYLON.Color4(color.r * 0.7, color.g * 0.7, color.b * 0.7, 0.6)
+            );
+            orbiterParticles.emitter = orbiter;
+            orbiterParticles.start();
+
+            scene.registerBeforeRender(() => {
+                const t = performance.now() * 0.001 * speed;
+                orbiter.position.x = radius * Math.cos(t) + 2 * Math.sin(t * 1.5);
+                orbiter.position.z = radius * Math.sin(t) + 2 * Math.cos(t * 1.2);
+                orbiter.position.y = 3 * Math.sin(t * 2.5);
+                orbiter.rotation.y += 0.04;
+            });
+
+            return orbiter;
+        };
+
+        const orbiters = [
+            createOrbiter(8, 0.6, new BABYLON.Color3(0.9, 0.1, 0.1)),
+            createOrbiter(10, 0.4, new BABYLON.Color3(0.1, 0.9, 0.1)),
+            createOrbiter(12, 0.8, new BABYLON.Color3(0.1, 0.1, 0.9))
+        ];
+
+        scene.registerBeforeRender(() => {
+            const t = performance.now() * 0.001;
+            torusKnot.rotation.y += 0.005;
+            torusKnot.rotation.x += 0.003;
+            const scale = 1 + 0.1 * Math.sin(t * 0.5);
+            torusKnot.scaling = new BABYLON.Vector3(scale, scale, scale);
+
+            knotMaterial.emissiveFresnelParameters.bias = 0.4 + 0.15 * Math.sin(t);
+            knotMaterial.emissiveFresnelParameters.power = 2 + 1.5 * Math.cos(t * 0.7);
+            knotMaterial.baseColor.r = 0.4 + 0.1 * Math.sin(t * 0.5);
+            knotMaterial.baseColor.g = 0.6 + 0.1 * Math.sin(t * 0.7);
+            knotMaterial.baseColor.b = 1.0 + 0.1 * Math.sin(t * 0.3);
+        });
+
+        const createColoredLight = (color, angle) => {
+            const light = new BABYLON.PointLight("light", new BABYLON.Vector3(0, 0, 0), scene);
+            light.intensity = 1.2;
+            light.diffuse = color;
+            light.specular = new BABYLON.Color3(0.9, 0.9, 0.9);
+
+            const lightSphere = BABYLON.MeshBuilder.CreateSphere("lightSphere", { diameter: 0.7 }, scene);
+            const lightMaterial = new BABYLON.StandardMaterial("lightMat", scene);
+            lightMaterial.emissiveColor = color;
+            lightMaterial.disableLighting = true;
+            lightSphere.material = lightMaterial;
+
+            scene.registerBeforeRender(() => {
+                const t = performance.now() * 0.001;
+                const x = 15 * Math.cos(t + angle);
+                const z = 15 * Math.sin(t + angle);
+                const y = 5 + 3 * Math.sin(t * 0.7);
+                light.position.set(x, y, z);
+                lightSphere.position.copyFrom(light.position);
+            });
+
+            return light;
+        };
+
+        const lights = [
+            createColoredLight(new BABYLON.Color3(0.9, 0.2, 0.2), 0),
+            createColoredLight(new BABYLON.Color3(0.2, 0.9, 0.2), Math.PI * 2 / 3),
+            createColoredLight(new BABYLON.Color3(0.2, 0.2, 0.9), Math.PI * 4 / 3)
+        ];
+
+        return scene;
+    };
+
+    const scene = createScene();
+
+    engine.runRenderLoop(() => {
+        scene.render();
+    });
+
+    window.addEventListener("resize", () => {
+        engine.resize();
+    });
+</script>

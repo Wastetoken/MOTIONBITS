@@ -1,0 +1,228 @@
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+    canvas { position: absolute; top: 0; left: 0; display: block; z-index: 1 }
+
+    #instructions {
+      position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%);
+      font-family: 'Inter', sans-serif; font-size: 15px; color: #fff;
+      padding: 14px 28px; border-radius: 16px;
+      background: rgba(0, 0, 0, .45); backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, .22);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, .35); z-index: 10; text-align: center;
+      user-select: none;
+    }
+
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap');
+  </style>
+
+  <div id="instructions">Click to morph shape</div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "p5": "https://esm.sh/p5@1.9.4"
+      }
+    }
+  </script>
+
+  <script type="module">
+    import p5 from 'p5';
+
+    const sketch = (p) => {
+
+      const SHAPES = ['Galaxy', 'Lissajous', 'Rose', 'Infinity', 'Butterfly', 'Star', 'Heart'];
+      const PARTICLES = 800;
+      const MAX_LAYERS = 4;
+      const BASE_STROKE_WEIGHT = 0.8;
+      const LAYER_STROKE_MULT = 1.6;
+      const BASE_ALPHA = 0.9;
+      const LAYER_ALPHA_DECAY = 0.5;
+      const BACKGROUND_ALPHA = 0.08;
+      const NOISE_SCALE = 0.003;
+      const NOISE_STRENGTH = 18;
+      const COLOR_SPEED = 2.2;
+      const MORPH_SPEED = 0.02;
+
+      let currentShape = 0, targetShape = 0;
+      let morphing = false, morphProgress = 0;
+      let time = 0;
+      let stars = [];
+
+      function updateLabel() {
+        const instructionsDiv = document.getElementById('instructions');
+        if (instructionsDiv) {
+           instructionsDiv.textContent =
+             `Current Shape: ${SHAPES[currentShape]} (Click or Tap to morph)`;
+        }
+      }
+
+      function easeInOutSine(t) { return -(p.cos(p.PI * t) - 1) / 2; }
+
+      function getShapePoint(idx, t) {
+        const a = t * p.TWO_PI;
+        let x = 0, y = 0, r = 0;
+        let scale = 0.3 * p.min(p.width, p.height);
+
+        switch (SHAPES[idx]) {
+          case 'Galaxy': {
+            const arms = 6;
+            r = scale * p.pow(t, 0.85);
+            x = r * p.cos(arms * a + r * 0.05);
+            y = r * p.sin(arms * a + r * 0.05);
+            break;
+          }
+          case 'Lissajous': {
+            const A = 3, B = 4;
+            x = scale * p.sin(A * a + p.PI / 2);
+            y = scale * p.sin(B * a);
+            break;
+          }
+          case 'Rose': {
+            const k = 5, rs = scale * 1.15;
+            r = rs * p.cos(k * a);
+            x = r * p.cos(a); y = r * p.sin(a);
+            break;
+          }
+          case 'Infinity': {
+            scale *= 1.45;
+            const denom = 1 + p.sq(p.sin(a));
+            x = scale * p.cos(a) / denom;
+            y = scale * p.sin(a) * p.cos(a) / denom;
+            break;
+          }
+          case 'Butterfly': {
+            scale *= .75;
+            r = scale * (p.exp(p.cos(a)) - 2.2 * p.cos(4 * a) + p.pow(p.sin((2 * a - p.PI) / 24), 5));
+            x = r * p.cos(a); y = r * p.sin(a);
+            break;
+          }
+          case 'Star': {
+            const spikes = 5, inner = .45, outer = 1;
+            r = scale * p.lerp(inner, outer, p.abs(p.cos(spikes * a)));
+            x = r * p.cos(a); y = r * p.sin(a);
+            break;
+          }
+          case 'Heart': {
+            scale *= .07;
+            x = scale * 16 * p.pow(p.sin(a), 3);
+            y = -scale * (13 * p.cos(a) - 5 * p.cos(2 * a) - 2 * p.cos(3 * a) - p.cos(4 * a));
+            break;
+          }
+        }
+        return p.createVector(x, y);
+      }
+
+
+      p.setup = () => {
+        p.createCanvas(p.windowWidth, p.windowHeight);
+        p.colorMode(p.HSB, 360, 100, 100, 1);
+        p.background(0);
+
+        stars = [];
+        for (let i = 0; i < 400; i++) {
+          stars.push({
+            x: p.random(-p.width / 2, p.width / 2),
+            y: p.random(-p.height / 2, p.height / 2)
+          });
+        }
+        updateLabel(); // Initial label set
+        const instructionsDiv = document.getElementById('instructions'); // Update text for clarity
+        if (instructionsDiv) {
+           instructionsDiv.textContent = `Current Shape: ${SHAPES[currentShape]} (Click or Tap to morph)`;
+        }
+      };
+
+      p.draw = () => {
+        p.translate(p.width / 2, p.height / 2);
+        p.background(0, 0, 0, BACKGROUND_ALPHA);
+
+        p.push();
+        p.noStroke();
+        p.fill(0, 0, 100, .3);
+        for (const s of stars) {
+          p.circle(s.x, s.y, p.random(.4, 1.4));
+        }
+        p.pop();
+
+        if (morphing) {
+          morphProgress += MORPH_SPEED;
+          if (morphProgress >= 1) {
+            morphProgress = 1;
+            currentShape = targetShape;
+            morphing = false;
+            updateLabel(); // Update label after morph completes
+          }
+        }
+
+        p.blendMode(p.ADD);
+        p.noFill();
+
+        for (let i = 0; i < PARTICLES; i++) {
+          const t = i / PARTICLES;
+          const eased = easeInOutSine(morphProgress);
+
+          const p1 = getShapePoint(currentShape, t);
+          const p2 = getShapePoint(targetShape, t);
+          const pos = p5.Vector.lerp(p1, p2, eased);
+
+          const n = p.noise(pos.x * NOISE_SCALE, pos.y * NOISE_SCALE, time * 0.15);
+          const shift = n * NOISE_STRENGTH;
+          const ang = t * p.TWO_PI * 7 + time * 0.4;
+          pos.add(p.createVector(p.cos(ang), p.sin(ang)).mult(shift));
+
+          const hue = ((p.atan2(pos.y, pos.x) + p.PI) / p.TWO_PI * 360 + p.frameCount * COLOR_SPEED) % 360;
+
+          for (let layer = MAX_LAYERS - 1; layer >= 0; layer--) {
+            const alpha = BASE_ALPHA * p.pow(LAYER_ALPHA_DECAY, layer);
+            const weight = BASE_STROKE_WEIGHT + layer * LAYER_STROKE_MULT;
+
+            p.stroke(hue, 100, 100, alpha);
+            p.strokeWeight(weight);
+            p.point(pos.x, pos.y);
+          }
+        }
+
+        p.blendMode(p.BLEND);
+        time += 0.01;
+      };
+
+      function triggerMorph() {
+         if (!morphing) {
+           targetShape = (currentShape + 1) % SHAPES.length;
+           morphing = true;
+           morphProgress = 0;
+           const instructionsDiv = document.getElementById('instructions');
+            if (instructionsDiv) {
+              instructionsDiv.textContent = `Morphing to → ${SHAPES[targetShape]}`;
+            }
+         }
+      }
+
+      p.mousePressed = () => {
+        triggerMorph();
+      };
+
+      p.touchStarted = () => {
+        triggerMorph();
+        return false; // Prevent default touch behavior like scrolling
+      };
+
+      p.windowResized = () => {
+        p.resizeCanvas(p.windowWidth, p.windowHeight);
+        stars = [];
+         for (let i = 0; i < 400; i++) {
+          stars.push({
+            x: p.random(-p.width / 2, p.width / 2),
+            y: p.random(-p.height / 2, p.height / 2)
+          });
+         }
+        p.background(0);
+        p.translate(p.width / 2, p.height / 2);
+      };
+
+    };
+
+    new p5(sketch);
+
+  </script>

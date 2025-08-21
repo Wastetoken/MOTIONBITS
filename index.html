@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MotionBits</title>
+  <style>
+    /* Reset & base */
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f0f3;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 3rem 2rem;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Neumorphic container */
+    .container {
+      background: #f0f0f3;
+      border-radius: 24px;
+      box-shadow:
+        8px 8px 16px #bebebe,
+        -8px -8px 16px #ffffff;
+      padding: 2.5rem 3rem;
+      max-width: 960px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* Heading with inset deep shadow */
+    h1 {
+      font-size: 3.2rem;
+      font-weight: 900;
+      color: #444;
+      margin-bottom: 1.5rem;
+      user-select: none;
+      text-align: center;
+      /* inset deep shadow for pressed effect */
+      text-shadow:
+        inset 2px 2px 4px #aaa,
+        inset -2px -2px 6px #fff;
+    }
+
+    /* Label with raised effect */
+    label {
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+      color: #555;
+      text-shadow:
+        2px 2px 4px #fff,
+        -2px -2px 4px #bebebe;
+      user-select: none;
+    }
+
+    /* Dropdown - raised neumorphic */
+    select {
+      width: 100%;
+      padding: 0.85rem 1rem;
+      font-size: 1.1rem;
+      border-radius: 18px;
+      border: none;
+      background: #f0f0f3;
+      color: #333;
+      box-shadow:
+        6px 6px 8px #bebebe,
+        -6px -6px 8px #ffffff;
+      cursor: pointer;
+      transition: box-shadow 0.2s ease;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+    }
+    select:hover, select:focus {
+      box-shadow:
+        2px 2px 6px #bbb,
+        -2px -2px 6px #fff;
+      outline: none;
+    }
+
+    /* Iframe with subtle raised effect */
+    iframe {
+      width: 100%;
+      height: 600px;
+      border-radius: 24px;
+      border: none;
+      background: #fff;
+      box-shadow:
+        8px 8px 16px #bebebe,
+        -8px -8px 16px #ffffff;
+      transition: box-shadow 0.3s ease;
+    }
+    iframe:focus {
+      box-shadow:
+        2px 2px 8px #aaa,
+        -2px -2px 8px #eee;
+      outline: none;
+    }
+    @media (max-width: 768px) {
+      iframe {
+        height: 400px;
+      }
+    }
+
+    /* Source code container - raised with monospace font */
+    #codeContainer {
+      background: #f0f0f3;
+      padding: 1rem 1.5rem;
+      border-radius: 20px;
+      max-height: 300px;
+      overflow: auto;
+      font-family: 'Fira Mono', monospace, monospace;
+      color: #444;
+      white-space: pre-wrap;
+      box-shadow:
+        6px 6px 12px #bebebe,
+        -6px -6px 12px #ffffff;
+      user-select: text;
+      line-height: 1.4;
+      font-size: 0.95rem;
+    }
+
+    /* Copy button - raised neumorphic */
+    button {
+      align-self: flex-start;
+      padding: 0.5rem 1.2rem;
+      border-radius: 24px;
+      border: none;
+      background: #f0f0f3;
+      color: #444;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow:
+        6px 6px 12px #bebebe,
+        -6px -6px 12px #ffffff;
+      transition: background-color 0.2s ease, box-shadow 0.2s ease;
+      user-select: none;
+      margin-bottom: 0.8rem;
+    }
+    button:hover {
+      background-color: #e3e3e6;
+      box-shadow:
+        2px 2px 6px #bbb,
+        -2px -2px 6px #fff;
+      color: #222;
+    }
+
+  </style>
+</head>
+<body>
+  <h1>MotionBits: Particle Animation Library</h1>
+  <div class="container">
+    <label for="animationSelect">Choose an animation:</label>
+    <select id="animationSelect">
+      <option value="">-- Select Animation --</option>
+      <option value="/animations/particle-1/">Shape Morpher</option>
+      <option value="/animations/particle-2/">Color Swapper</option>
+      <option value="/animations/particle-3/">Size Changer</option>
+      <option value="/animations/particle-4/">Rotation Animator</option>
+      <option value="/animations/particle-5/">Opacity Fader</option>
+      <option value="/animations/particle-6/">Position Shifter</option>
+      <option value="/animations/particle-7/">Scale Animator</option>
+      <option value="/animations/particle-8/">Skew Animator</option>
+      <option value="/animations/particle-9/">Blur Animator</option>
+      <option value="/animations/particle-10/">Drop Shadow</option>
+      <option value="/animations/particle-11/">Glow Effect</option>
+      <option value="/animations/particle-12/">Geo God</option>
+      <option value="/animations/particle-13/">Particle Lens 1</option>
+      <option value="/animations/particle-14/">Particle Lens 2</option>
+      <option value="/animations/particle-15/">Arctic Chaos</option>
+      <option value="/animations/particle-16/">Lord of the Rings</option>
+      <option value="/animations/particle-17/">Star Forge</option>
+      <option value="/animations/particle-18/">Knotty</option>
+      <option value="/animations/particle-19/">Shimmer</option>
+      <option value="/animations/particle-20/">Time Bend</option>
+    </select>
+
+    <iframe id="previewFrame" src="" title="Particle Animation Preview"></iframe>
+
+    <button id="copyBtn" style="display:none;">Copy Source Code</button>
+    <pre id="codeContainer" style="display:none;"></pre>
+  </div>
+
+  <script>
+    const select = document.getElementById('animationSelect');
+    const frame = document.getElementById('previewFrame');
+    const codeContainer = document.getElementById('codeContainer');
+    const copyBtn = document.getElementById('copyBtn');
+
+    select.addEventListener('change', async () => {
+      const val = select.value;
+      if (!val) {
+        frame.src = '';
+        codeContainer.style.display = 'none';
+        copyBtn.style.display = 'none';
+        codeContainer.textContent = '';
+        return;
+      }
+      frame.src = val + 'index.html';
+
+      try {
+        const res = await fetch(val + 'index.html');
+        if (!res.ok) throw new Error('Failed to load source code');
+        const text = await res.text();
+
+        codeContainer.textContent = text;
+        codeContainer.style.display = 'block';
+        copyBtn.style.display = 'inline-block';
+        copyBtn.textContent = 'Copy Source Code';
+      } catch (e) {
+        codeContainer.textContent = 'Error loading source code.';
+        codeContainer.style.display = 'block';
+        copyBtn.style.display = 'none';
+      }
+    });
+
+    copyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(codeContainer.textContent)
+        .then(() => {
+          copyBtn.textContent = 'Copied!';
+          setTimeout(() => {
+            copyBtn.textContent = 'Copy Source Code';
+          }, 2000);
+        })
+        .catch(() => alert('Failed to copy code.'));
+    });
+  </script>
+</body>
+</html>
+
